@@ -1,0 +1,864 @@
+Program.Sub.ScreenSU.Start
+gui.BOMParent..create
+gui.BOMParent..caption("BOM Re-Upload")
+gui.BOMParent..size(5070,1995)
+gui.BOMParent..position(0,0)
+gui.BOMParent..event(unload,bomparent_unload)
+gui.BOMParent..alwaysontop(False)
+gui.BOMParent..fontname("Arial")
+gui.BOMParent..fontsize(8)
+gui.BOMParent..forecolor(0)
+gui.BOMParent..fontstyle(,,,,)
+gui.BOMParent..BackColor(-2147483633)
+gui.BOMParent..controlbox(True)
+gui.BOMParent..maxbutton(True)
+gui.BOMParent..minbutton(True)
+gui.BOMParent..mousepointer(0)
+gui.BOMParent..moveable(True)
+gui.BOMParent..sizeable(True)
+gui.BOMParent..ShowInTaskBar(True)
+gui.BOMParent..titlebar(True)
+gui.BOMParent.lblBOMParent.create(label,"BOM Parent Already exists. Please choose an upload method.",True,4470,255,1,200,200,True,0,Arial,8,-2147483633,0)
+gui.BOMParent.optOverwrite.create(option)
+gui.BOMParent.optOverwrite.caption("Overwrite")
+gui.BOMParent.optOverwrite.visible(True)
+gui.BOMParent.optOverwrite.size(1575,255)
+gui.BOMParent.optOverwrite.zorder(0)
+gui.BOMParent.optOverwrite.position(665,500)
+gui.BOMParent.optOverwrite.enabled(True)
+gui.BOMParent.optOverwrite.alignment(0)
+gui.BOMParent.optOverwrite.fontname("Arial")
+gui.BOMParent.optOverwrite.fontsize(8)
+gui.BOMParent.optAppend.create(option)
+gui.BOMParent.optAppend.caption("Append")
+gui.BOMParent.optAppend.visible(True)
+gui.BOMParent.optAppend.size(1575,255)
+gui.BOMParent.optAppend.zorder(0)
+gui.BOMParent.optAppend.position(3170,500)
+gui.BOMParent.optAppend.enabled(True)
+gui.BOMParent.optAppend.alignment(0)
+gui.BOMParent.optAppend.fontname("Arial")
+gui.BOMParent.optAppend.fontsize(8)
+gui.BOMParent.btnOK.create(button)
+gui.BOMParent.btnOK.caption("OK")
+gui.BOMParent.btnOK.visible(True)
+gui.BOMParent.btnOK.size(855,375)
+gui.BOMParent.btnOK.zorder(0)
+gui.BOMParent.btnOK.position(980,875)
+gui.BOMParent.btnOK.enabled(True)
+gui.BOMParent.btnOK.fontname("Arial")
+gui.BOMParent.btnOK.fontsize(8)
+gui.BOMParent.btnOK.event(click,btnok_click)
+gui.BOMParent.btnCancel.create(button)
+gui.BOMParent.btnCancel.caption("Cancel")
+gui.BOMParent.btnCancel.visible(True)
+gui.BOMParent.btnCancel.size(855,375)
+gui.BOMParent.btnCancel.zorder(0)
+gui.BOMParent.btnCancel.position(2690,875)
+gui.BOMParent.btnCancel.enabled(True)
+gui.BOMParent.btnCancel.fontname("Arial")
+gui.BOMParent.btnCancel.fontsize(8)
+gui.BOMParent.btnCancel.event(click,btncancel_click)
+
+
+Program.Sub.ScreenSU.End
+
+Program.Sub.Preflight.Start
+
+Variable.UDT.BOM.Define("IPN",String)
+Variable.UDT.BOM.Define("CPN",String)
+Variable.UDT.BOM.Define("QTY",String)
+Variable.UDT.BOM.Define("REF",String)
+Variable.UDT.BOM.Define("UOM",String)
+Variable.UDT.BOM.Define("REV",String)
+Variable.UDT.BOM.Define("DESC",String)
+Variable.UDT.BOM.Define("COM",String)
+Variable.UDT.BOM.Define("PKG",String)
+Variable.UDT.BOM.Define("POPType",String)
+Variable.UDT.BOM.Define("MFG01",String)
+Variable.UDT.BOM.Define("SOURCE",String)
+Variable.UDT.BOM.Define("ProductLine",String)
+Variable.UDT.BOM.Define("LOT",String)
+Variable.UDT.BOM.Define("MFG02",String)
+Variable.UDT.BOM.Define("MFGPN02",String)
+Variable.UDT.BOM.Define("MFGPN01",String)
+Variable.UDT.BOM.Define("MFG03",String)
+Variable.UDT.BOM.Define("MFGPN03",String)
+Variable.UDT.BOM.Define("MFG04",String)
+Variable.UDT.BOM.Define("MFGPN04",String)
+Variable.UDT.BOM.Define("MFG05",String)
+Variable.UDT.BOM.Define("MFGPN05",String)
+Variable.UDT.BOM.Define("MFG06",String)
+Variable.UDT.BOM.Define("MFGPN06",String)
+Variable.uGlobal.uBOM.Declare("BOM")
+Variable.Global.bINVUPFlag.Declare(Boolean,FALSE)
+Variable.UDT.XREFData.Define("MFG",String,VENDOR)
+Variable.UDT.XREFData.Define("MFGPart",String,MFG_PART)
+Variable.UDT.XREFData.Define("Part",String,PART)
+Variable.uGlobal.uXREFData.Declare("XREFData")
+Variable.UDT.INVData.Define("Part",String,PART)
+Variable.UDT.INVData.Define("ProductLine",String,PRODUCT_LINE)
+Variable.UDT.INVData.Define("Lot",String,BIN)
+Variable.UDT.INVData.Define("UOM",String,UM_INVENTORY)
+Variable.UDT.INVData.Define("Desc",String,DESCRIPTION)
+Variable.UDT.INVData.Define("Rev",String)
+Variable.uGlobal.uINVData.Declare("INVData")
+Variable.Global.bOverwrite.Declare(Boolean,False)
+Variable.Global.bAppend.Declare(Boolean,False)
+Variable.Global.sUploadFileDir.Declare(String)
+Program.Sub.Preflight.End
+
+Program.Sub.Main.Start
+F.ODBC.Connection!Conx.OpenConnection(V.ambient.PDSN,V.Ambient.PUSER,V.Ambient.PPass)
+
+F.Intrinsic.Control.CallSub(Readexcel)
+F.Intrinsic.Control.CallSub(Checkforparentbom)
+F.Intrinsic.Control.CallSub(Loadudts)
+F.Intrinsic.Control.CallSub(Prepbomdata)
+F.Intrinsic.Control.CallSub(Prepinvdata)
+F.Intrinsic.Control.CallSub(Prepxrefdata)
+F.Intrinsic.Control.CallSub(Intinvupload)
+F.Intrinsic.Control.CallSub(Createinvupload)
+F.Intrinsic.Control.CallSub(Createbomupload)
+
+F.Intrinsic.UI.Msgbox("Uploads Complete")
+
+F.Intrinsic.Control.CallSub(Postuploads)
+F.Intrinsic.Control.End
+
+Program.Sub.Main.End
+
+Program.Sub.ReadExcel.Start
+V.Local.sFileDir.Declare(String)
+V.Local.iRowCount.Declare(Long)
+V.Local.iCount1.Declare(Long)
+V.Global.sElements.Declare(String)
+V.Local.sReadRow.Declare(String)
+V.Local.iRedimUbound.Declare(String)
+V.Local.iRedimUbound.Set(-1)
+V.uGlobal.uBOM.Redim(-1,-1)
+V.Global.sParentName.Declare(String)
+V.Local.iInString.Declare(Long)
+
+
+'Function.Intrinsic.ui.showopenfiledialog("","*.log",variable.local.sFileDir,variable.local.Sfilename)
+F.Intrinsic.UI.ShowOpenFileDialog("","*.xls","",V.Local.sFileDir)
+	Function.Automation.MSExcel.CreateAppObject("MSExcel")
+Function.Automation.MSExcel.OpenWorkBook("MSExcel","CMi",V.Local.sFileDir)
+Function.Automation.MSExcel.OpenWorkSheet("CMi","BOM",1)
+
+'Find the Spreadsheet
+Function.Intrinsic.File.GetFileNameFromFQN(V.Local.sFileDir,V.Global.sParentName)
+
+V.Global.sUploadFileDir.Set(V.Local.sFileDir)
+
+'Get the Parent BOM number from file name
+F.Intrinsic.String.Instr(V.Global.sParentName,".",0,V.Local.iInString)
+F.Intrinsic.Math.Sub(V.Local.iInString,1,V.Local.iInString)
+F.Intrinsic.String.Left(V.Global.sParentName,V.Local.iInString,V.Global.sParentName)
+'F.Intrinsic.UI.Msgbox(V.Global.sParentName)
+
+V.Global.sElements.Set("IPN*!*CPN*!*QTY*!*REF*!*UOM*!*REV*!*DESC*!*COM*!*PKG*!*POPType*!*MFG01*!*MFGPN01*!*SOURCE*!*ProductLine*!*LOT*!*MFG02*!*MFGPN02*!*MFG03*!*MFGPN03*!*MFG04*!*MFGPN04*!*MFG05*!*MFGPN05*!*MFG06*!*MFGPN06")
+
+F.Automation.MSExcel.RowCount("BOM",V.Local.iRowCount)
+
+'Loading UDT
+F.Intrinsic.Control.For(V.Local.iCount1,2,V.Local.iRowCount,1)
+	
+	F.Automation.MSExcel.ReadRow("BOM",V.Local.iCount1,1,25,V.Local.sReadRow)
+
+	F.Intrinsic.Control.If(V.Local.sReadRow,<>," ")
+		F.Intrinsic.Math.Add(V.Local.iRedimUbound,1,V.Local.iRedimUbound)
+
+		F.Intrinsic.Control.If(V.Local.iRedimUbound,=,0)
+			V.uGlobal.uBOM.Redim(0,0)
+			F.Intrinsic.Variable.LoadUDTFromString(V.uGlobal.uBOM,V.Global.sElements,V.Local.sReadRow,V.Ambient.NewLine,"*!*",False)
+		F.Intrinsic.Control.Else
+			F.Intrinsic.Variable.LoadUDTFromString(V.uGlobal.uBOM,V.Global.sElements,V.Local.sReadRow,V.Ambient.NewLine,"*!*",True)
+		F.Intrinsic.Control.EndIf
+	
+	F.Intrinsic.Control.EndIf
+
+F.Intrinsic.Control.Next(V.Local.iCount1)
+
+Function.Automation.MSExcel.SaveWorkBook("CMi")
+Function.Automation.MSExcel.DestroyAllObjects("MSExcel","CMi","BOM")
+
+
+
+Program.Sub.ReadExcel.End
+
+Program.Sub.PrepBOMData.Start
+V.Local.sOutPut.Declare(String)
+V.Local.iCount1.Declare(Long)
+V.Local.iCharCount.Declare(Long)
+V.Local.sIPN.Declare(String)
+V.Local.sCPN.Declare(String)
+V.Local.sQTY.Declare(String)
+V.Local.sREF.Declare(String)
+V.Local.sUOM.Declare(String)
+V.Local.sREV.Declare(String)
+V.Local.sDESC.Declare(String)
+V.Local.sCOM.Declare(String)
+V.Local.sPKG.Declare(String)
+V.Local.sPOPType.Declare(String)
+V.Local.sMFG01.Declare(String)
+V.Local.sMFGPN01.Declare(String)
+V.Local.sSOURCE.Declare(String)
+V.Local.sProductLine.Declare(String)
+V.Local.sLOT.Declare(String)
+V.Local.sMFG02.Declare(String)
+V.Local.sMFGPN02.Declare(String)
+V.Local.sMFG03.Declare(String)
+V.Local.sMFGPN03.Declare(String)
+V.Local.sMFG04.Declare(String)
+V.Local.sMFGPN04.Declare(String)
+V.Local.sMFG05.Declare(String)
+V.Local.sMFGPN05.Declare(String)
+V.Local.sMFG06.Declare(String)
+V.Local.sMFGPN06.Declare(String)
+V.Global.sMemo1.Declare(String)
+V.Global.sMemo2.Declare(String)
+
+F.Intrinsic.Control.For(V.Local.iCount1,0,V.uGlobal.uBOM.UBound,1)
+	V.Local.sIPN.Set(V.uGlobal.uBOM(V.Local.iCount1)!IPN)
+	F.Intrinsic.Control.If(V.Local.sIPN.Length,<,20)
+		F.Intrinsic.String.RPad(V.Local.sIPN," ",20,V.Local.sIPN)
+		V.uGlobal.uBOM(V.Local.iCount1)!IPN.Set(V.Local.sIPN)
+	F.Intrinsic.Control.EndIf
+
+	V.Local.sCPN.Set(V.uGlobal.uBOM(V.Local.iCount1)!CPN)
+	F.Intrinsic.Control.If(V.Local.sCPN.Length,<,20)
+		F.Intrinsic.String.RPad(V.Local.sCPN," ",20,V.Local.sCPN)
+		V.uGlobal.uBOM(V.Local.iCount1)!CPN.Set(V.Local.sCPN)
+	F.Intrinsic.Control.EndIf
+
+	V.Local.sQTY.Set(V.uGlobal.uBOM(V.Local.iCount1)!QTY)
+	F.Intrinsic.Control.If(V.Local.sQTY.Length,<,16)
+		F.Intrinsic.String.RPad(V.Local.sQTY," ",16,V.Local.sQTY)
+		V.uGlobal.uBOM(V.Local.iCount1)!QTY.Set(V.Local.sQTY)
+	F.Intrinsic.Control.EndIf
+
+	V.Local.sUOM.Set(V.uGlobal.uBOM(V.Local.iCount1)!UOM)
+	F.Intrinsic.Control.If(V.Local.sUOM.Length,<,2)
+		F.Intrinsic.String.RPad(V.Local.sUOM," ",2,V.Local.sUOM)
+		V.uGlobal.uBOM(V.Local.iCount1)!UOM.Set(V.Local.sUOM)
+	F.Intrinsic.Control.EndIf
+
+	V.Local.sDESC.Set(V.uGlobal.uBOM(V.Local.iCount1)!DESC)
+	F.Intrinsic.Control.If(V.Local.sDESC.Length,<,30)
+		F.Intrinsic.String.RPad(V.Local.sDESC," ",30,V.Local.sDESC)
+		V.uGlobal.uBOM(V.Local.iCount1)!DESC.Set(V.Local.sDESC)
+	F.Intrinsic.Control.EndIf
+
+	V.Local.sPKG.Set(V.uGlobal.uBOM(V.Local.iCount1)!PKG)
+	F.Intrinsic.Control.If(V.Local.sPKG.Length,<,20)
+		F.Intrinsic.String.RPad(V.Local.sPKG," ",20,V.Local.sPKG)
+		V.uGlobal.uBOM(V.Local.iCount1)!PKG.Set(V.Local.sPKG)
+	F.Intrinsic.Control.EndIf
+
+	V.Local.sPOPType.Set(V.uGlobal.uBOM(V.Local.iCount1)!POPType)
+	F.Intrinsic.Control.If(V.Local.sPOPType.Length,<,6)
+		F.Intrinsic.String.RPad(V.Local.sPOPType," ",6,V.Local.sPOPType)
+		V.uGlobal.uBOM(V.Local.iCount1)!POPType.Set(V.Local.sPOPType)
+	F.Intrinsic.Control.EndIf
+
+	V.Local.sSOURCE.Set(V.uGlobal.uBOM(V.Local.iCount1)!SOURCE)
+	F.Intrinsic.Control.If(V.Local.sSOURCE.Length,<,1)
+		F.Intrinsic.String.RPad(V.Local.sSOURCE," ",1,V.Local.sSOURCE)
+		V.uGlobal.uBOM(V.Local.iCount1)!SOURCE.Set(V.Local.sSOURCE)
+	F.Intrinsic.Control.EndIf
+
+	V.Local.sREV.Set(V.uGlobal.uBOM(V.Local.iCount1)!REV)
+	F.Intrinsic.Control.If(V.Local.sREV.Length,<,2)
+		F.Intrinsic.String.RPad(V.Local.sREV," ",2,V.Local.sREV)
+		V.uGlobal.uBOM(V.Local.iCount1)!REV.Set(V.Local.sREV)
+	F.Intrinsic.Control.EndIf
+
+	V.Local.sCOM.Set(V.uGlobal.uBOM(V.Local.iCount1)!COM)
+	F.Intrinsic.Control.If(V.Local.sCOM.Length,<,10)
+		F.Intrinsic.String.RPad(V.Local.sCOM," ",10,V.Local.sCOM)
+		V.uGlobal.uBOM(V.Local.iCount1)!COM.Set(V.Local.sCOM)
+	F.Intrinsic.Control.EndIf
+
+	V.Local.sProductLine.Set(V.uGlobal.uBOM(V.Local.iCount1)!ProductLine)
+	F.Intrinsic.Control.If(V.Local.sProductLine.Length,<,2)
+		F.Intrinsic.String.RPad(V.Local.sProductLine," ",2,V.Local.sProductLine)
+		V.uGlobal.uBOM(V.Local.iCount1)!ProductLine.Set(V.Local.sProductLine)
+	F.Intrinsic.Control.EndIf
+
+	V.Local.sLOT.Set(V.uGlobal.uBOM(V.Local.iCount1)!LOT)
+	F.Intrinsic.Control.If(V.Local.sLOT.Length,<,1)
+		F.Intrinsic.String.RPad(V.Local.sLOT," ",1,V.Local.sLOT)
+		V.uGlobal.uBOM(V.Local.iCount1)!LOT.Set(V.Local.sLOT)
+	F.Intrinsic.Control.EndIf
+
+
+
+
+	V.Local.sMFG01.Set(V.uGlobal.uBOM(V.Local.iCount1)!MFG01)
+	F.Intrinsic.Control.If(V.Local.sMFG01.Length,<,23)
+		F.Intrinsic.String.RPad(V.Local.sMFG01," ",23,V.Local.sMFG01)
+		V.uGlobal.uBOM(V.Local.iCount1)!MFG01.Set(V.Local.sMFG01)
+	F.Intrinsic.Control.EndIf
+
+	V.Local.sMFGPN01.Set(V.uGlobal.uBOM(V.Local.iCount1)!MFGPN01)
+	F.Intrinsic.Control.If(V.Local.sMFGPN01.Length,<,23)
+		F.Intrinsic.String.RPad(V.Local.sMFGPN01," ",23,V.Local.sMFGPN01)
+		V.uGlobal.uBOM(V.Local.iCount1)!MFGPN01.Set(V.Local.sMFGPN01)
+	F.Intrinsic.Control.EndIf
+
+	V.Local.sMFG02.Set(V.uGlobal.uBOM(V.Local.iCount1)!MFG02)
+	F.Intrinsic.Control.If(V.Local.sMFG02.Length,<,23)
+		F.Intrinsic.String.RPad(V.Local.sMFG02," ",23,V.Local.sMFG02)
+		V.uGlobal.uBOM(V.Local.iCount1)!MFG02.Set(V.Local.sMFG02)
+	F.Intrinsic.Control.EndIf
+
+	V.Local.sMFGPN02.Set(V.uGlobal.uBOM(V.Local.iCount1)!MFGPN02)
+	F.Intrinsic.Control.If(V.Local.sMFGPN02.Length,<,23)
+		F.Intrinsic.String.RPad(V.Local.sMFGPN02," ",23,V.Local.sMFGPN02)
+		V.uGlobal.uBOM(V.Local.iCount1)!MFGPN02.Set(V.Local.sMFGPN02)
+	F.Intrinsic.Control.EndIf
+
+	V.Local.sMFG03.Set(V.uGlobal.uBOM(V.Local.iCount1)!MFG03)
+	F.Intrinsic.Control.If(V.Local.sMFG03.Length,<,23)
+		F.Intrinsic.String.RPad(V.Local.sMFG03," ",23,V.Local.sMFG03)
+		V.uGlobal.uBOM(V.Local.iCount1)!MFG03.Set(V.Local.sMFG03)
+	F.Intrinsic.Control.EndIf
+
+	V.Local.sMFGPN03.Set(V.uGlobal.uBOM(V.Local.iCount1)!MFGPN03)
+	F.Intrinsic.Control.If(V.Local.sMFGPN03.Length,<,23)
+		F.Intrinsic.String.RPad(V.Local.sMFGPN03," ",23,V.Local.sMFGPN03)
+		V.uGlobal.uBOM(V.Local.iCount1)!MFGPN03.Set(V.Local.sMFGPN03)
+	F.Intrinsic.Control.EndIf
+
+	V.Local.sMFG04.Set(V.uGlobal.uBOM(V.Local.iCount1)!MFG04)
+	F.Intrinsic.Control.If(V.Local.sMFG04.Length,<,23)
+		F.Intrinsic.String.RPad(V.Local.sMFG04," ",23,V.Local.sMFG04)
+		V.uGlobal.uBOM(V.Local.iCount1)!MFG04.Set(V.Local.sMFG04)
+	F.Intrinsic.Control.EndIf
+
+	V.Local.sMFGPN04.Set(V.uGlobal.uBOM(V.Local.iCount1)!MFGPN04)
+	F.Intrinsic.Control.If(V.Local.sMFGPN04.Length,<,23)
+		F.Intrinsic.String.RPad(V.Local.sMFGPN04," ",23,V.Local.sMFGPN04)
+		V.uGlobal.uBOM(V.Local.iCount1)!MFGPN04.Set(V.Local.sMFGPN04)
+	F.Intrinsic.Control.EndIf
+
+	V.Local.sMFG05.Set(V.uGlobal.uBOM(V.Local.iCount1)!MFG05)
+	F.Intrinsic.Control.If(V.Local.sMFG05.Length,<,23)
+		F.Intrinsic.String.RPad(V.Local.sMFG05," ",23,V.Local.sMFG05)
+		V.uGlobal.uBOM(V.Local.iCount1)!MFG05.Set(V.Local.sMFG05)
+	F.Intrinsic.Control.EndIf
+
+	V.Local.sMFGPN05.Set(V.uGlobal.uBOM(V.Local.iCount1)!MFGPN05)
+	F.Intrinsic.Control.If(V.Local.sMFGPN05.Length,<,23)
+		F.Intrinsic.String.RPad(V.Local.sMFGPN05," ",23,V.Local.sMFGPN05)
+		V.uGlobal.uBOM(V.Local.iCount1)!MFGPN05.Set(V.Local.sMFGPN05)
+	F.Intrinsic.Control.EndIf
+
+	V.Local.sMFG06.Set(V.uGlobal.uBOM(V.Local.iCount1)!MFG06)
+	F.Intrinsic.Control.If(V.Local.sMFG06.Length,<,23)
+		F.Intrinsic.String.RPad(V.Local.sMFG06," ",23,V.Local.sMFG06)
+		V.uGlobal.uBOM(V.Local.iCount1)!MFG06.Set(V.Local.sMFG06)
+	F.Intrinsic.Control.EndIf
+
+	V.Local.sMFGPN06.Set(V.uGlobal.uBOM(V.Local.iCount1)!MFGPN06)
+	F.Intrinsic.Control.If(V.Local.sMFGPN06.Length,<,23)
+		F.Intrinsic.String.RPad(V.Local.sMFGPN06," ",23,V.Local.sMFGPN06)
+		V.uGlobal.uBOM(V.Local.iCount1)!MFGPN06.Set(V.Local.sMFGPN06)
+	F.Intrinsic.Control.EndIf
+F.Intrinsic.Control.Next(V.Local.iCount1)
+
+
+Program.Sub.PrepBOMData.End
+
+Program.Sub.WriteToBOMC.Start
+V.Local.iHdl.Declare(Long)
+V.Local.sFile.Declare(String)
+V.Local.sLine.Declare(String)
+V.Local.sFileN.Declare(String)
+
+V.Local.sFileN.Set(V.Args.sSub)
+F.Intrinsic.File.GetHandle(V.Local.iHdl)
+F.Intrinsic.String.Concat(V.Caller.FilesDir,"\",V.Local.sFileN,".txt",V.Local.sFile)
+F.Intrinsic.Control.If(V.Args.bFirst,=,"True")
+    F.Intrinsic.File.OpenForWrite(V.Local.sFile,V.Local.iHdl)
+F.Intrinsic.Control.Else
+    F.Intrinsic.File.OpenForAppend(V.Local.sFile,V.Local.iHdl)
+F.Intrinsic.Control.EndIf
+
+'F.Intrinsic.String.Concat(V.Ambient.NewLine,V.Args.sOutPut,V.local.sLine)
+
+F.Intrinsic.File.WriteLine(V.Local.iHdl,V.Args.sText)
+
+F.Intrinsic.File.CloseFile(V.Local.iHdl)
+
+Program.Sub.WriteToBOMC.End
+
+Program.Sub.CreateBOMUpload.Start
+V.Local.sParam.Declare(String)
+V.Local.iCount.Declare(Long)
+V.Local.sSpacer01.Declare(String)
+V.Local.sSpacer02.Declare(String)
+V.Local.sSpacer03.Declare(String)
+V.Local.sText.Declare(String)
+V.Local.sREF.Declare(String)
+V.Local.sParent.Declare(String)
+F.Intrinsic.String.RPad(V.Local.sSpacer01," ",27,V.Local.sSpacer01)
+F.Intrinsic.String.RPad(V.Local.sSpacer02," ",1,V.Local.sSpacer02)
+F.Intrinsic.String.RPad(V.Local.sSpacer03," ",90,V.Local.sSpacer03)
+
+F.Intrinsic.Control.For(V.Local.iCount,0,V.uGlobal.uBOM.UBound,1)
+
+	V.Local.sREF.Set(V.uGlobal.uBOM(V.Local.iCount1)!REF)
+	F.Intrinsic.Control.If(V.Local.sREF.Length,<,30)
+		F.Intrinsic.String.RPad(V.Local.sREF," ",30,V.Global.sMemo1)
+		V.uGlobal.uBOM(V.Local.iCount1)!REF.Set(V.Local.sREF)
+		F.Intrinsic.String.RPad(V.Global.sMemo2," ",30,V.Global.sMemo2)
+
+	F.Intrinsic.Control.ElseIf(V.Local.sREF.Length,>,30)
+		F.Intrinsic.String.Left(V.Local.sREF,30,V.Global.sMemo1)
+		F.Intrinsic.String.Right(V.Local.sREF,30,V.Global.sMemo2)
+
+		F.Intrinsic.Control.If(V.Global.sMemo2.length,<,30)
+			F.Intrinsic.String.RPad(V.Global.sMemo2," ",30,V.Global.sMemo2)
+		F.Intrinsic.Control.Endif
+
+	F.Intrinsic.Control.Else
+		V.Global.sMemo1.Set(V.Local.sREF)
+	F.Intrinsic.Control.EndIf
+
+	V.Local.sParent.Set(V.Global.sParentName)
+	F.Intrinsic.Control.If(V.Local.sParent.Length,<,20)
+		F.Intrinsic.String.RPad(V.Local.sParent," ",20,V.Global.sParentName)
+	F.Intrinsic.Control.EndIf
+
+	F.Intrinsic.String.Concat(V.Global.sParentName,V.uGlobal.uBOM(V.Local.iCount)!IPN,V.uGlobal.uBOM(V.Local.iCount)!QTY,V.uGlobal.uBOM(V.Local.iCount)!UOM,V.uGlobal.uBOM(V.Local.iCount)!DESC,V.Global.sMemo1,V.Global.sMemo2,V.uGlobal.uBOM(V.Local.iCount)!MFG01,V.uGlobal.uBOM(V.Local.iCount)!MFGPN01,V.Local.sSpacer02,V.uGlobal.uBOM(V.Local.iCount)!PKG,V.uGlobal.uBOM(V.Local.iCount)!POPType,V.Local.sSpacer02,V.uGlobal.uBOM(V.Local.iCount)!SOURCE,V.Local.sSpacer03,V.Local.sText)
+	F.Intrinsic.Control.CallSub(Writetobomc,"sText",V.Local.sText,"bFirst",False,"sSub","BOMC")
+
+F.Intrinsic.Control.Next(V.Local.iCount)
+
+
+F.Intrinsic.Control.If(V.Global.bAppend,=,True)
+	F.Intrinsic.String.Concat(V.Caller.CompanyCode,"1","UPLBOMC",V.Local.sParam)
+F.Intrinsic.Control.ElseIf(V.Global.bOverwrite,=,True)
+	F.Intrinsic.String.Concat(V.Caller.CompanyCode,"3","UPLBOMC",V.Local.sParam)
+F.Intrinsic.Control.Else
+	F.Intrinsic.String.Concat(V.Caller.CompanyCode,"1","UPLBOMC",V.Local.sParam)
+F.Intrinsic.Control.EndIf
+
+F.Intrinsic.Task.LaunchGSSSync("UPL001A","-c",V.Local.sParam)
+
+Program.Sub.CreateBOMUpload.End
+
+Program.Sub.IntINVUpload.Start
+V.Local.sInvDec.Declare(String)
+
+F.Intrinsic.UI.Msgbox("Do you want to initiate an Inventory Upload?","Inventory Upload",4,V.Local.sInvDec)
+F.Intrinsic.Control.If(V.Local.sInvDec,=,6)
+	V.Global.bINVUPFlag.Set(True)
+F.Intrinsic.Control.EndIf
+
+
+Program.Sub.IntINVUpload.End
+
+Program.Sub.WriteToXREF.Start
+V.Local.iHdl.Declare(Long)
+V.Local.sFile.Declare(String)
+V.Local.sLine.Declare(String)
+V.Local.sFileN.Declare(String)
+
+V.Local.sFileN.Set(V.Args.sSub)
+F.Intrinsic.File.GetHandle(V.Local.iHdl)
+F.Intrinsic.String.Concat(V.Caller.FilesDir,"\",V.Local.sFileN,".txt",V.Local.sFile)
+F.Intrinsic.Control.If(V.Args.bFirst,=,"True")
+    F.Intrinsic.File.OpenForWrite(V.Local.sFile,V.Local.iHdl)
+F.Intrinsic.Control.Else
+    F.Intrinsic.File.OpenForAppend(V.Local.sFile,V.Local.iHdl)
+F.Intrinsic.Control.EndIf
+
+'F.Intrinsic.String.Concat(V.Ambient.NewLine,V.Args.sOutPut,V.local.sLine)
+
+F.Intrinsic.File.WriteLine(V.Local.iHdl,V.Args.sText)
+
+F.Intrinsic.File.CloseFile(V.Local.iHdl)
+
+
+Program.Sub.WriteToXREF.End
+
+Program.Sub.CreateINVUpload.Start
+V.Local.sQuery.Declare(String)
+V.Local.iCount.Declare(Long)
+V.Local.sRET.Declare(String)
+V.Local.sText.Declare(String)
+V.Local.sSpacer.Declare(String)
+V.Local.sRET01.Declare(String)
+V.Local.sRET02.Declare(String)
+V.Local.sRET03.Declare(String)
+V.Local.sRET04.Declare(String)
+V.Local.sRET05.Declare(String)
+V.Local.sRET06.Declare(String)
+V.Local.sSpacer01.Declare(String)
+V.Local.sSpacer02.Declare(String)
+V.Local.sSpacer03.Declare(String)
+V.Local.sSpacer04.Declare(String)
+V.Local.sSpacer05.Declare(String)
+V.Local.sSpacer06.Declare(String)
+V.Local.sSpacer07.Declare(String)
+V.Local.sSpacer08.Declare(String)
+V.Local.sSpacer09.Declare(String)
+V.Local.sParam.Declare(String)
+
+F.Intrinsic.Control.If(V.Global.bINVUPFlag,=,True)
+
+	F.Intrinsic.String.RPad(V.Local.sSpacer," ",28,V.Local.sSpacer)
+	F.Intrinsic.String.RPad(V.Local.sSpacer01," ",3,V.Local.sSpacer01)
+	F.Intrinsic.String.RPad(V.Local.sSpacer02," ",6,V.Local.sSpacer02)
+	F.Intrinsic.String.RPad(V.Local.sSpacer03," ",289,V.Local.sSpacer03)
+	F.Intrinsic.String.RPad(V.Local.sSpacer04," ",1145,V.Local.sSpacer04)
+	F.Intrinsic.String.RPad(V.Local.sSpacer05," ",1563,V.Local.sSpacer05)
+	F.Intrinsic.String.RPad(V.Local.sSpacer07," ",60,V.Local.sSpacer07)
+	F.Intrinsic.String.RPad(V.Local.sSpacer08," ",59,V.Local.sSpacer08)
+	F.Intrinsic.String.RPad(V.Local.sSpacer09," ",59,V.Local.sSpacer09)
+	F.Intrinsic.String.RPad(V.Local.sSpacer06," ",8,V.Local.sSpacer06)
+
+	F.Intrinsic.Variable.UDTSeek(V.uGlobal.uINVData!Part,V.Global.sParentName,0,V.Local.sRET)
+
+	F.Intrinsic.Control.If(V.Local.sRET,=,"")
+		F.Intrinsic.String.RPad(V.Global.sParentName," ",20,V.Global.sParentName)
+		F.Intrinsic.String.Concat(V.Global.sParentName,V.Local.sSpacer05,V.Local.sText)
+		F.Intrinsic.Control.CallSub(Writetoinv,"sText",V.Local.sText,"bFirst",False,"sSub","INV")
+	F.Intrinsic.Control.EndIf
+
+	F.Intrinsic.Control.For(V.Local.iCount,0,V.uGlobal.uBOM.UBound,1)
+		F.Intrinsic.Variable.UDTSeek(V.uGlobal.uINVData!Part,V.uGlobal.uBOM(V.Local.iCount)!IPN,0,V.Local.sRET)
+		F.Intrinsic.Control.If(V.Local.sRET,<>,"")
+
+'			F.Intrinsic.Variable.UDTSeek(V.uGlobal.uXREFData!Part,V.uGlobal.uBOM(V.Local.iCount)!CPN,0,V.Local.sRET)
+'			F.Intrinsic.Control.If(V.Local.sRET,=,"")
+'				F.Intrinsic.String.Concat(V.uGlobal.uXREFData(V.Local.sRET)!Part,V.Local.sSpacer,V.uGlobal.uXREFData(V.Local.sRET)!MFG,V.uGlobal.uXREFData(V.Local.sRET)!MFGPart,V.Local.sText)
+'				F.Intrinsic.Control.CallSub(Writetoxref,"sText",V.Local.sText,"bFirst",False,"sSub","XREF")
+'			F.Intrinsic.Control.EndIf
+			
+			F.Intrinsic.Variable.UDTMultiSeek(V.uGlobal.uXREFData!MFG,V.uGlobal.uBOM(V.Local.iCount)!MFG01,V.uGlobal.uXREFData!Part,V.uGlobal.uBOM(V.Local.iCount)!MFGPN01,V.Local.sRET01)
+			F.Intrinsic.Variable.UDTMultiSeek(V.uGlobal.uXREFData!MFG,V.uGlobal.uBOM(V.Local.iCount)!MFG02,V.uGlobal.uXREFData!Part,V.uGlobal.uBOM(V.Local.iCount)!MFGPN02,V.Local.sRET02)
+			F.Intrinsic.Variable.UDTMultiSeek(V.uGlobal.uXREFData!MFG,V.uGlobal.uBOM(V.Local.iCount)!MFG03,V.uGlobal.uXREFData!Part,V.uGlobal.uBOM(V.Local.iCount)!MFGPN03,V.Local.sRET03)
+			F.Intrinsic.Variable.UDTMultiSeek(V.uGlobal.uXREFData!MFG,V.uGlobal.uBOM(V.Local.iCount)!MFG04,V.uGlobal.uXREFData!Part,V.uGlobal.uBOM(V.Local.iCount)!MFGPN04,V.Local.sRET04)
+			F.Intrinsic.Variable.UDTMultiSeek(V.uGlobal.uXREFData!MFG,V.uGlobal.uBOM(V.Local.iCount)!MFG05,V.uGlobal.uXREFData!Part,V.uGlobal.uBOM(V.Local.iCount)!MFGPN05,V.Local.sRET05)
+			F.Intrinsic.Variable.UDTMultiSeek(V.uGlobal.uXREFData!MFG,V.uGlobal.uBOM(V.Local.iCount)!MFG06,V.uGlobal.uXREFData!Part,V.uGlobal.uBOM(V.Local.iCount)!MFGPN06,V.Local.sRET06)
+
+			F.Intrinsic.Control.If(V.Local.sRET01,=,"")
+				F.Intrinsic.String.Concat(V.uGlobal.uBOM(V.Local.iCount)!IPN,,V.Local.ssPacer06,V.uGlobal.uBOM(V.Local.iCount)!CPN,"MISC  ",V.uGlobal.uBOM(V.Local.iCount)!MFGPN01,V.uGlobal.uBOM(V.Local.iCount)!MFG01,V.Local.sSpacer07,V.Local.sText)
+				F.Intrinsic.Control.CallSub(Writetoxref,"sText",V.Local.sText,"bFirst",False,"sSub","XREF")
+			F.Intrinsic.Control.ElseIf(V.Local.sRET02,=,"")
+				F.Intrinsic.String.Concat(V.uGlobal.uBOM(V.Local.iCount)!IPN,V.Local.ssPacer06,V.uGlobal.uBOM(V.Local.iCount)!CPN,"MISC  ",V.uGlobal.uBOM(V.Local.iCount)!MFGPN02,V.uGlobal.uBOM(V.Local.iCount)!MFG02,V.Local.sSpacer07,V.Local.sText)
+				F.Intrinsic.Control.CallSub(Writetoxref,"sText",V.Local.sText,"bFirst",False,"sSub","XREF")
+			F.Intrinsic.Control.ElseIf(V.Local.sRET03,=,"")
+				F.Intrinsic.String.Concat(V.uGlobal.uBOM(V.Local.iCount)!IPN,V.Local.ssPacer06,V.uGlobal.uBOM(V.Local.iCount)!CPN,"MISC  ",V.uGlobal.uBOM(V.Local.iCount)!MFGPN03,V.uGlobal.uBOM(V.Local.iCount)!MFG03,V.Local.sSpacer07,V.Local.sText)
+				F.Intrinsic.Control.CallSub(Writetoxref,"sText",V.Local.sText,"bFirst",False,"sSub","XREF")
+			F.Intrinsic.Control.ElseIf(V.Local.sRET04,=,"")
+				F.Intrinsic.String.Concat(V.uGlobal.uBOM(V.Local.iCount)!IPN,V.Local.ssPacer06,V.uGlobal.uBOM(V.Local.iCount)!CPN,"MISC  ",V.uGlobal.uBOM(V.Local.iCount)!MFGPN04,V.uGlobal.uBOM(V.Local.iCount)!MFG04,V.Local.sSpacer07,V.Local.sText)
+				F.Intrinsic.Control.CallSub(Writetoxref,"sText",V.Local.sText,"bFirst",False,"sSub","XREF")
+			F.Intrinsic.Control.ElseIf(V.Local.sRET05,=,"")
+				F.Intrinsic.String.Concat(V.uGlobal.uBOM(V.Local.iCount)!IPN,V.Local.ssPacer06,V.uGlobal.uBOM(V.Local.iCount)!CPN,"MISC  ",V.uGlobal.uBOM(V.Local.iCount)!MFGPN05,V.uGlobal.uBOM(V.Local.iCount)!MFG05,V.Local.sSpacer07,V.Local.sText)
+				F.Intrinsic.Control.CallSub(Writetoxref,"sText",V.Local.sText,"bFirst",False,"sSub","XREF")
+			F.Intrinsic.Control.ElseIf(V.Local.sRET06,=,"")
+				F.Intrinsic.String.Concat(V.uGlobal.uBOM(V.Local.iCount)!IPN,V.Local.ssPacer06,V.uGlobal.uBOM(V.Local.iCount)!CPN,"MISC  ",V.uGlobal.uBOM(V.Local.iCount)!MFGPN06,V.uGlobal.uBOM(V.Local.iCount)!MFG06,V.Local.sSpacer07,V.Local.sText)
+				F.Intrinsic.Control.CallSub(Writetoxref,"sText",V.Local.sText,"bFirst",False,"sSub","XREF")
+			F.Intrinsic.Control.EndIf
+
+		F.Intrinsic.Control.Else
+			
+			F.Intrinsic.Control.If(V.uGlobal.uBOM(V.Local.iCount)!REV,<>,"")
+				F.Intrinsic.String.Trim(V.uGlobal.uBOM(V.Local.iCount)!IPN,V.Local.sRET01)
+				F.Intrinsic.String.Concat(V.local.sRet01,V.uGlobal.uBOM(V.Local.iCount)!REV,V.Local.sRET)
+				F.Intrinsic.Control.If(V.Local.sRET.Length,<,20)
+					F.Intrinsic.String.RPad(V.Local.sRET," ",20,V.Local.sRET)
+				F.Intrinsic.Control.EndIF
+				V.uGlobal.uBOM(V.Local.iCount1)!IPN.Set(V.Local.sRET)
+			F.Intrinsic.Control.EndIf
+
+			F.Intrinsic.Control.If(V.uGlobal.uBOM(V.Local.iCount)!MFG01,<>,"")
+			F.Intrinsic.String.Concat(V.uGlobal.uBOM(V.Local.iCount)!IPN,V.Local.ssPacer06,V.uGlobal.uBOM(V.Local.iCount)!CPN,"MISC  ",V.uGlobal.uBOM(V.Local.iCount)!MFGPN01,V.uGlobal.uBOM(V.Local.iCount)!MFG01,V.Local.sSpacer07,V.Local.sText)
+			F.Intrinsic.Control.CallSub(Writetoxref,"sText",V.Local.sText,"bFirst",False,"sSub","XREF")
+			
+			F.Intrinsic.Control.ElseIF(V.uGlobal.uBOM(V.Local.iCount)!MFG02,<>,"")
+			F.Intrinsic.String.Concat(V.uGlobal.uBOM(V.Local.iCount)!IPN,V.Local.ssPacer06,V.uGlobal.uBOM(V.Local.iCount)!CPN,"MISC  ",V.uGlobal.uBOM(V.Local.iCount)!MFGPN02,V.uGlobal.uBOM(V.Local.iCount)!MFG02,V.Local.sSpacer07,V.Local.sText)
+			F.Intrinsic.Control.CallSub(Writetoxref,"sText",V.Local.sText,"bFirst",False,"sSub","XREF")
+
+			F.Intrinsic.Control.ElseIF(V.uGlobal.uBOM(V.Local.iCount)!MFG03,<>,"")
+			F.Intrinsic.String.Concat(V.uGlobal.uBOM(V.Local.iCount)!IPN,V.Local.ssPacer06,V.uGlobal.uBOM(V.Local.iCount)!CPN,"MISC  ",V.uGlobal.uBOM(V.Local.iCount)!MFGPN03,V.uGlobal.uBOM(V.Local.iCount)!MFG03,V.Local.sSpacer07,V.Local.sText)
+			F.Intrinsic.Control.CallSub(Writetoxref,"sText",V.Local.sText,"bFirst",False,"sSub","XREF")
+
+			F.Intrinsic.Control.ElseIF(V.uGlobal.uBOM(V.Local.iCount)!MFG04,<>,"")
+			F.Intrinsic.String.Concat(V.uGlobal.uBOM(V.Local.iCount)!IPN,V.Local.ssPacer06,V.uGlobal.uBOM(V.Local.iCount)!CPN,"MISC  ",V.uGlobal.uBOM(V.Local.iCount)!MFGPN04,V.uGlobal.uBOM(V.Local.iCount)!MFG04,V.Local.sSpacer07,V.Local.sText)
+			F.Intrinsic.Control.CallSub(Writetoxref,"sText",V.Local.sText,"bFirst",False,"sSub","XREF")
+
+			F.Intrinsic.Control.ElseIF(V.uGlobal.uBOM(V.Local.iCount)!MFG05,<>,"")
+			F.Intrinsic.String.Concat(V.uGlobal.uBOM(V.Local.iCount)!IPN,V.Local.ssPacer06,V.uGlobal.uBOM(V.Local.iCount)!CPN,"MISC  ",V.uGlobal.uBOM(V.Local.iCount)!MFGPN05,V.uGlobal.uBOM(V.Local.iCount)!MFG05,V.Local.sSpacer07,V.Local.sText)
+			F.Intrinsic.Control.CallSub(Writetoxref,"sText",V.Local.sText,"bFirst",False,"sSub","XREF")
+
+			F.Intrinsic.Control.ElseIF(V.uGlobal.uBOM(V.Local.iCount)!MFG06,<>,"")
+			F.Intrinsic.String.Concat(V.uGlobal.uBOM(V.Local.iCount)!IPN,V.Local.ssPacer06,V.uGlobal.uBOM(V.Local.iCount)!CPN,"MISC  ",V.uGlobal.uBOM(V.Local.iCount)!MFGPN06,V.uGlobal.uBOM(V.Local.iCount)!MFG06,V.Local.sSpacer07,V.Local.sText)
+			F.Intrinsic.Control.CallSub(Writetoxref,"sText",V.Local.sText,"bFirst",False,"sSub","XREF")
+			F.Intrinsic.Control.EndIf
+
+
+			F.Intrinsic.String.Concat(V.uGlobal.uBOM(V.Local.iCount)!IPN,V.Local.sSpacer01,V.uGlobal.uBOM(V.Local.iCount)!ProductLine,V.Local.sSpacer02,V.uGlobal.uBOM(V.Local.iCount)!DESC,V.Local.sSpacer01,V.uGlobal.uBOM(V.Local.iCount)!UOM,V.Local.sSpacer03,V.uGlobal.uBOM(V.Local.iCount)!COM,V.Local.sSpacer09,V.uGlobal.uBOM(V.Local.iCount)!LOT,V.Local.sSpacer04,V.Local.sText)
+			F.Intrinsic.Control.CallSub(Writetoinv,"sText",V.Local.sText,"bFirst",False,"sSub","INV")
+		
+		F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.Next(V.Local.iCount)
+
+		Function.Global.General.CallWrapperSync(50,"UPLINV/a")
+		Function.Global.General.CallWrapperSync(50,"UPLIXREF/a")
+F.Intrinsic.Control.EndIF
+
+
+
+Program.Sub.CreateINVUpload.End
+
+Program.Sub.WriteToINV.Start
+V.Local.iHdl.Declare(Long)
+V.Local.sFile.Declare(String)
+V.Local.sLine.Declare(String)
+V.Local.sFileN.Declare(String)
+
+V.Local.sFileN.Set(V.Args.sSub)
+F.Intrinsic.File.GetHandle(V.Local.iHdl)
+F.Intrinsic.String.Concat(V.Caller.FilesDir,"\",V.Local.sFileN,".txt",V.Local.sFile)
+F.Intrinsic.Control.If(V.Args.bFirst,=,"True")
+    F.Intrinsic.File.OpenForWrite(V.Local.sFile,V.Local.iHdl)
+F.Intrinsic.Control.Else
+    F.Intrinsic.File.OpenForAppend(V.Local.sFile,V.Local.iHdl)
+F.Intrinsic.Control.EndIf
+
+'F.Intrinsic.String.Concat(V.Ambient.NewLine,V.Args.sOutPut,V.local.sLine)
+
+F.Intrinsic.File.WriteLine(V.Local.iHdl,V.Args.sText)
+
+F.Intrinsic.File.CloseFile(V.Local.iHdl)
+
+Program.Sub.WriteToINV.End
+
+Program.Sub.LoadUDTs.Start
+V.Local.sQuery.Declare(String)
+
+V.Local.sQuery.Set("SELECT PART, PRODUCT_LINE, DESCRIPTION, UM_INVENTORY, BIN FROM INVENTORY_MSTR")
+F.ODBC.Connection!conx.OpenRecordsetRO("rstINV",V.Local.sQuery)
+F.Intrinsic.Variable.LoadUDTFromRecordset("conx","rstINV","V.uGlobal.uINVData",False)
+
+V.Local.sQuery.Set("SELECT PART, VENDOR, MFG_PART FROM INV_CROSS_REF")
+F.ODBC.Connection!conx.OpenRecordsetRO("rstXREF",V.Local.sQuery)
+F.Intrinsic.Variable.LoadUDTFromRecordset("conx","rstXREF","V.uGlobal.uXREFData",False)
+
+Program.Sub.LoadUDTs.End
+
+Program.Sub.PrepINVData.Start
+V.Local.iCount.Declare(Long)
+V.Local.sPart.Declare(String)
+V.Local.sPL.Declare(String)
+V.Local.sLot.Declare(String)
+V.Local.sUOM.Declare(String)
+V.Local.sDesc.Declare(String)
+
+F.Intrinsic.Control.For(V.Local.iCount,0,V.uGlobal.uINVData.UBound,1)
+
+	V.Local.sPart.Set(V.uGlobal.uINVData(V.Local.iCount)!Part)
+	F.Intrinsic.Control.If(V.Local.sPart.Length,<,20)
+		F.Intrinsic.String.RPad(V.Local.sPart," ",20,V.Local.sPart)
+		V.uGlobal.uINVData(V.Local.iCount)!Part.Set(V.Local.sPart)
+	F.Intrinsic.Control.EndIf
+
+	V.Local.sPL.Set(V.uGlobal.uINVData(V.Local.iCount)!ProductLine)
+	F.Intrinsic.Control.If(V.Local.sPL.Length,<,2)
+		F.Intrinsic.String.RPad(V.Local.sPL," ",2,V.Local.sPL)
+		V.uGlobal.uINVData(V.Local.iCount)!ProductLine.Set(V.Local.sPL)
+	F.Intrinsic.Control.EndIf
+
+	V.Local.sLot.Set(V.uGlobal.uINVData(V.Local.iCount)!Lot)
+	F.Intrinsic.Control.If(V.Local.sLot.Length,<,1)
+		F.Intrinsic.String.RPad(V.Local.sLOT," ",1,V.Local.sLOT)
+		V.uGlobal.uINVData(V.Local.iCount)!Lot.Set(V.Local.sLOT)
+	F.Intrinsic.Control.EndIf
+
+	V.Local.sUOM.Set(V.uGlobal.uINVData(V.Local.iCount)!UOM)
+	F.Intrinsic.Control.If(V.Local.sUOM.Length,<,2)
+		F.Intrinsic.String.RPad(V.Local.sUOM," ",2,V.Local.sUOM)
+		V.uGlobal.uINVData(V.Local.iCount)!UOM.Set(V.Local.sUOM)
+	F.Intrinsic.Control.EndIf
+
+	V.Local.sDesc.Set(V.uGlobal.uINVData(V.Local.iCount)!Desc)
+	F.Intrinsic.Control.If(V.Local.sDesc.Length,<,30)
+		F.Intrinsic.String.RPad(V.Local.sDesc," ",30,V.Local.sDesc)
+		V.uGlobal.uINVData(V.Local.iCount)!Desc.Set(V.Local.sDesc)
+	F.Intrinsic.Control.EndIf
+
+F.Intrinsic.Control.Next(V.Local.iCount)
+
+Program.Sub.PrepINVData.End
+
+Program.Sub.PrepXREFData.Start
+V.Local.iCount.Declare(Long)
+V.Local.sPart.Declare(String)
+V.Local.sMFG.Declare(String)
+V.Local.sMFGPart.Declare(String)
+
+F.Intrinsic.Control.For(V.Local.iCount,0,V.uGlobal.uXREFData.UBound,1)
+
+	V.Local.sPart.Set(V.uGlobal.uXREFData(V.Local.iCount)!Part)
+	F.Intrinsic.Control.If(V.Local.sPart.Length,<,20)
+		F.Intrinsic.String.RPad(V.Local.sPart," ",20,V.Local.sPart)
+		V.uGlobal.uXREFData(V.Local.iCount)!Part.Set(V.Local.sPart)
+	F.Intrinsic.Control.EndIf
+
+	V.Local.sMFG.Set(V.uGlobal.uXREFData(V.Local.iCount)!MFG)
+	F.Intrinsic.Control.If(V.Local.sMFG.Length,<,6)
+		F.Intrinsic.String.RPad(V.Local.sMFG," ",6,V.Local.sMFG)
+		V.uGlobal.uXREFData(V.Local.iCount)!MFG.Set(V.Local.sMFG)
+	F.Intrinsic.Control.EndIf
+
+	V.Local.sMFGPart.Set(V.uGlobal.uXREFData(V.Local.iCount)!MFGPart)
+	F.Intrinsic.Control.If(V.Local.sMFGPart.Length,<,23)
+		F.Intrinsic.String.RPad(V.Local.sMFGPart," ",23,V.Local.sMFGPart)
+		V.uGlobal.uXREFData(V.Local.iCount)!MFGPart.Set(V.Local.sMFGPart)
+	F.Intrinsic.Control.EndIf
+
+F.Intrinsic.Control.Next(V.Local.iCount)
+
+Program.Sub.PrepXREFData.End
+
+program.sub.btnok_click.start
+F.Intrinsic.Control.If(V.Screen.BOMParent!optOverwrite.Value,=,True)
+	V.Global.bOverwrite.Set(True)
+F.Intrinsic.Control.ElseIf(V.Screen.BOMParent!optAppend.Value,=,True)
+	V.Global.bAppend.Set(True)
+F.Intrinsic.Control.EndIf
+
+Gui.BOMParent..Visible(False)
+
+	
+
+program.sub.btnok_click.end
+
+program.sub.btncancel_click.start
+F.Intrinsic.Control.End
+
+program.sub.btncancel_click.end
+
+Program.Sub.CheckForParentBOM.Start
+V.Local.sQuery.Declare(String)
+V.Local.sQuery2.Declare(String)
+V.Local.sText.Declare(String)
+V.Local.sText.Set(V.Global.sParentName)
+
+
+F.Intrinsic.String.Concat("SELECT PART FROM INVENTORY_MSTR WHERE PART = '",V.Global.sParentName,"'",V.Local.sQuery)
+F.ODBC.Connection!conx.OpenRecordsetRO("rstINV",V.Local.sQuery)
+
+F.Intrinsic.String.Concat("SELECT PARENT FROM BOM_MSTR WHERE PARENT = '",V.Global.sParentName,"'",V.Local.sQuery2)
+F.ODBC.Connection!conx.OpenRecordsetRO("rstBOM",V.Local.sQuery2)
+
+F.Intrinsic.Control.If(V.odbc.Conx!rstINV.EOF,=,True)
+	F.Intrinsic.Control.If(V.ODBC.Conx!rstBOM.EOF,=,True)
+		'F.Intrinsic.Control.ExitSub
+	F.Intrinsic.Control.Else
+		F.Intrinsic.Control.CallSub(Reuploadbom)
+		F.Intrinsic.Control.EndIf
+F.Intrinsic.Control.Else
+	F.Intrinsic.Control.CallSub(Reuploadbom)
+F.Intrinsic.Control.EndIf
+
+F.ODBC.Conx!rstINV.Close
+F.ODBC.Conx!rstBOM.Close
+
+Program.Sub.CheckForParentBOM.End
+
+Program.Sub.PostUploads.Start
+V.Local.sTargetDir.Declare(String)
+V.Local.iRET.Declare(Long)
+V.Local.bDirExists.Declare(Boolean)
+V.Local.bFileExists.Declare(Boolean)
+V.Local.iInString.Declare(Long)
+V.Local.sFileName.Declare(String)
+V.Local.sFileCheck.Declare(String)
+V.Local.sCopyWarning.Declare(String)
+V.Local.sBOMFile.Declare(String)
+V.Local.sINVFile.Declare(String)
+V.Local.sXREFFile.Declare(String)
+V.Local.sFileDir.Declare(String)
+
+F.Intrinsic.String.InstrRev(V.Global.sUploadFileDir,"\",V.Local.iRET)
+F.Intrinsic.Math.Sub(V.Global.sUploadFileDir.Length,V.Local.iRET,V.Local.iRET)
+F.Intrinsic.String.LEFT(V.Global.sUploadFileDir,V.Local.iRET,V.Local.sTargetDir)
+
+F.Intrinsic.String.Concat(V.Local.sTargetDir,"\UploadComplete",V.Local.sTargetDir)
+F.Intrinsic.File.DirExists(V.Local.sTargetDir,V.Local.bDirExists)
+
+F.Intrinsic.Control.If(V.Local.bDirExists,=,True)
+	F.Intrinsic.String.Trim(V.Global.sParentName,V.Global.sParentName)
+	F.Intrinsic.String.Concat(V.Local.sTargetDir,"\",V.Global.sParentName,".xls",V.Local.sTargetDir)
+	F.Intrinsic.File.CopyFile(V.Global.sUploadFileDir,V.Local.sTargetDir)
+	F.Intrinsic.File.Exists(V.Local.sTargetDir,V.Local.bFileExists)
+	F.Intrinsic.Control.If(V.Local.bFileExists,<>,True)
+		F.Intrinsic.String.Concat("Upload file failed to copy to ",V.Local.sTargetDir,V.Local.sCopyWarning)
+		F.Intrinsic.UI.Msgbox(V.Local.sCopyWarning)
+	F.Intrinsic.Control.Else
+		F.Intrinsic.File.DeleteFile(V.Global.sUploadFileDir)
+	F.Intrinsic.Control.Endif
+F.Intrinsic.Control.Else
+	F.Intrinsic.File.CreateDir(V.Local.sTargetDir)
+	F.Intrinsic.File.DirExists(V.Local.sTargetDir,V.Local.bDirExists)
+	F.Intrinsic.Control.If(V.Local.bDirExists,=,True)
+	F.Intrinsic.String.Trim(V.Global.sParentName,V.Global.sParentName)
+	F.Intrinsic.String.Concat(V.Local.sTargetDir,"\",V.Global.sParentName,".xls",V.Local.sTargetDir)
+	F.Intrinsic.File.CopyFile(V.Global.sUploadFileDir,V.Local.sTargetDir)
+		F.Intrinsic.File.Exists(V.Local.sTargetDir,V.Local.bFileExists)
+		F.Intrinsic.Control.If(V.Local.bFileExists,<>,True)
+			F.Intrinsic.String.Concat("Upload file failed to copy to ",V.Local.sTargetDir," . Please save the upload file to a different location. ",V.Local.sCopyWarning)
+			F.Intrinsic.UI.Msgbox(V.Local.sCopyWarning)
+		F.Intrinsic.Control.Else
+			F.Intrinsic.File.DeleteFile(V.Global.sUploadFileDir)
+		F.Intrinsic.Control.Endif
+	F.Intrinsic.Control.Else
+		F.Intrinsic.String.Concat("Failed to create the completed upload directory ",V.Local.sTargetDir," . Please save the upload file to a different location. ",V.Local.sCopyWarning)
+	F.Intrinsic.Control.EndIf
+F.Intrinsic.Control.EndIf
+
+F.Intrinsic.String.Concat(V.Caller.FilesDir,"\BOMC.txt",V.Local.sBOMFile)
+F.Intrinsic.File.Exists(V.Local.sBOMFile,V.Local.bFileExists)
+
+F.Intrinsic.Control.If(V.Local.bFileExists,=,True)
+	F.Intrinsic.File.DeleteFile(V.Local.sBOMFile)
+F.Intrinsic.Control.EndIf
+
+F.Intrinsic.String.Concat(V.Caller.FilesDir,"\INV.txt",V.Local.sINVFile)
+F.Intrinsic.File.Exists(V.Local.sINVFile,V.Local.bFileExists)
+
+F.Intrinsic.Control.If(V.Local.bFileExists,=,True)
+	F.Intrinsic.File.DeleteFile(V.Local.sINVFile)
+F.Intrinsic.Control.EndIf
+
+F.Intrinsic.String.Concat(V.Caller.FilesDir,"\XREF.txt",V.Local.sXREFFile)
+F.Intrinsic.File.Exists(V.Local.sXREFFile,V.Local.bFileExists)
+
+F.Intrinsic.Control.If(V.Local.bFileExists,=,True)
+	F.Intrinsic.File.DeleteFile(V.Local.sXREFFile)
+F.Intrinsic.Control.EndIf
+
+Program.Sub.PostUploads.End
+
+program.sub.bomparent_unload.start
+F.Intrinsic.Control.End
+
+program.sub.bomparent_unload.end
+
+Program.Sub.ReUploadBOM.Start
+Gui.BOMParent..Show
+
+Program.Sub.ReUploadBOM.End
+
+Program.Sub.Comments.Start
+${$0$}$ATG_BOM_Upld_Opt_INV_Upld$}$TSP$}$12/14/2012
+Program.Sub.Comments.End
+
